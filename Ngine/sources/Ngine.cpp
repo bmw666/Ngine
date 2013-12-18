@@ -316,7 +316,7 @@ VOID NGINE::render() {
 	}
 
 	// clean canvas
-	Device->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+	Device->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 200, 0), 1.0f, 0);
 	
 	// begin scene
 	Device->BeginScene();
@@ -334,14 +334,12 @@ VOID NGINE::render() {
 	*/
 	
 	
-	// Проекция
+	// set projection
 	D3DXMatrixPerspectiveFovLH(&Projection, D3DX_PI/2, 
 		 Correlation, 0.1f, 3000.0f);
 	Device->SetTransform(D3DTS_PROJECTION, &Projection);
 	
-	// Установка камеры
-	//D3DXMatrixLookAtLH(&Camera, &D3DXVECTOR3(0.0f, CamAngleX, CamAngleY),
-	
+	// set camera
 	D3DXMatrixTranslation(&World, 0, 0, 0);
 	D3DXMatrixLookAtLH(&Camera, &D3DXVECTOR3(0.00001f, 0.0f, 0),
         &D3DXVECTOR3(0.0f, 1.0f, 0.0f),
@@ -352,8 +350,6 @@ VOID NGINE::render() {
 	D3DXMatrixMultiply(&Camera, &Wheel1, &Camera);
 	D3DXMatrixReflect(&Wheel1, &D3DXPLANE(0,1,0,0.3));
 	D3DXMatrixMultiply(&Camera, &Camera, &Wheel1);*/
-	
-
 
 	/*
 	//if (CurrentObject)
@@ -373,15 +369,7 @@ VOID NGINE::render() {
 	BackBuffer->Release();
 
 	Device->Clear(0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-*/
 
-	
-	// Установка камеры
-//	if (CurrentObject->AngleY>CamAngleY)
-//		CamAngleY+=0.01f;
-//	else CamAngleY-=0.01f;
-
-	
 	/*D3DXMatrixTranslation(&World, CurrentObject->X, 0, CurrentObject->Z);
 	Device->SetTransform(D3DTS_WORLD, &World);
 	Obj[0]->Draw();
