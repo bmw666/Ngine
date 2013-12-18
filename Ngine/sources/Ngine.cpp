@@ -19,6 +19,8 @@ NGINE::NGINE(HINSTANCE hinst) {
 	Keyboard	= NULL;
 //BYTE									Key[256];
 //DIMOUSESTATE					MouseState;
+
+	isDeviceLosted = false;
 }
 
 NGINE::~NGINE() {
@@ -214,9 +216,8 @@ HRESULT NGINE::initInput() {
 
 	if FAILED( Keyboard->Acquire() ) {
 		destroyInput();
-		MessageBox(window->hwnd, "Не удалось захватить клавиатуру", 
-			"Клавиатура", MB_OK);
-		return S_FALSE;
+		MessageBox(window->hwnd, "Не удалось захватить клавиатуру", "Клавиатура", MB_OK);
+		return initInput();
 	}
 
 	if FAILED( Input->CreateDevice(GUID_SysMouse, &Mouse, NULL) ) {
@@ -240,7 +241,7 @@ HRESULT NGINE::initInput() {
 	if FAILED( Mouse->Acquire() ) {
 		destroyInput();
 		MessageBox(window->hwnd, "Не удалось захватить мышь", "Мышь", MB_OK);
-		return S_FALSE;
+		return initInput();
 	}
 
 	return S_OK;
@@ -251,12 +252,8 @@ VOID NGINE::getInput() {
 	static bool LostFocus = false;
 	
 	// if window not in focus, don't take input
-	if (window->hwnd != GetFocus()) { 
-		LostFocus = true; 
+	if (window->hwnd != GetFocus())
 		return;
-	}
-
-	//if (LostFocus) {destroyInput(); initInput(); LostFocus=false;}
 
 	if FAILED( Keyboard->GetDeviceState(256, (LPVOID)&KeyboardKeys) ) {
 		destroyInput();
@@ -269,7 +266,10 @@ VOID NGINE::getInput() {
 		MessageBox(window->hwnd, "Не удалось считать данные с мыши", "Мышь", MB_OK);
 		return;
 	}
+}
 
+VOID NGINE::controlInput() {
+	getInput();
 	if (KeyboardKeys[DIK_ESCAPE]) 
 		exit(0);
 }
@@ -296,6 +296,120 @@ VOID NGINE::destroyInput() {
 			Input->Release();
 		Input = NULL;
 	}
+}
+
+VOID NGINE::engine() {
+	if (!isDeviceLosted) {
+		controlInput();
+		render();
+	}
+}
+
+VOID NGINE::render() {
+	if (Device == NULL)
+		return;
+
+	// chaeck for D3D device not losted
+	if (FAILED(Device->TestCooperativeLevel())) {
+		isDeviceLosted = true; // Зупинка гри
+		return;
+	}
+
+	// clean canvas
+	Device->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+	
+	// begin scene
+	Device->BeginScene();
+	Device->SetRenderState(D3DRS_FOGENABLE, FALSE);
+	
+/*	IDirect3DTexture9* RenderTexture;
+	D3DXCreateTexture(Device, 512, 512, 0, D3DUSAGE_RENDERTARGET, D3DFMT_R8G8B8, D3DPOOL_DEFAULT, &RenderTexture);
+    IDirect3DSurface9* BackBuffer = 0;
+    Device->GetRenderTarget(0, &BackBuffer);
+    IDirect3DSurface9* RenderSurface = NULL;
+    RenderTexture->GetSurfaceLevel(0, &RenderSurface);
+    Device->SetRenderTarget(0, RenderSurface);
+    
+	
+	
+	
+	
+	// Проекция
+	D3DXMatrixPerspectiveFovLH(&Projection, D3DX_PI/2, 
+		 Correlation, 0.1f, 3000.0f);
+	Device->SetTransform(D3DTS_PROJECTION, &Projection);
+	// end
+
+
+	// Установка камеры
+	//D3DXMatrixLookAtLH(&Camera, &D3DXVECTOR3(0.0f, CamAngleX, CamAngleY),
+	D3DXMatrixLookAtLH(&Camera, &D3DXVECTOR3(0.00001f, 0.0f, 0),
+        &D3DXVECTOR3(0.0f, 1.0f, 0.0f),
+        &D3DXVECTOR3(0.0f, 1.0f, 0.0f));
+	D3DXMatrixRotationY(&Wheel1, -CurrentObject->AngleY);
+	D3DXMatrixMultiply(&Camera, &Wheel1, &Camera);
+	D3DXMatrixReflect(&Wheel1, &D3DXPLANE(0,1,0,0.3));
+	D3DXMatrixMultiply(&Camera, &Camera, &Wheel1);
+	
+	//if (CurrentObject)
+	//	D3DXMatrixTranslation(&Wheel1, -CurrentObject->X, -CurrentObject->Y, -CurrentObject->Z);
+	//D3DXMatrixMultiply(&Camera, &Wheel1, &Camera); 
+	Device->SetTransform(D3DTS_VIEW, &Camera);
+	D3DXMatrixTranslation(&World, -CurrentObject->X, -CurrentObject->Y, -CurrentObject->Z);
+	Device->SetTransform(D3DTS_WORLD, &World);
+        // тут рендерится сцена
+		Obj[0]->Draw();
+		Obj[1]->Draw();
+    Device->SetRenderTarget(0, BackBuffer);
+	if (Obj[3]->MeshTexture[0])
+		Obj[3]->MeshTexture[0]->Release();
+	Obj[3]->MeshTexture[0] = RenderTexture;
+	RenderSurface->Release();
+	BackBuffer->Release();
+
+	Device->Clear(0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+*/
+
+	
+	// Установка камеры
+//	if (CurrentObject->AngleY>CamAngleY)
+//		CamAngleY+=0.01f;
+//	else CamAngleY-=0.01f;
+
+	/* comment
+	D3DXMatrixTranslation(&World, CurrentObject->X, 0, CurrentObject->Z);
+	Device->SetTransform(D3DTS_WORLD, &World);
+	Obj[0]->Draw();
+	Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
+	D3DXMatrixTranslation(&World, 0, 0, 0);
+	Device->SetTransform(D3DTS_WORLD, &World);
+	// Отрисовка сцены
+	for (int i=1; i<OBJECT3D::Count; i++)
+		if (Obj[i]->DrawEnabled && Obj[i]!=CurrentObject)
+			Obj[i]->Draw();
+	// end
+	if (CurrentObject)
+		D3DXMatrixTranslation(&WorldMove, CurrentObject->X,  CurrentObject->Y,  CurrentObject->Z);
+	Device->SetTransform(D3DTS_WORLD, &WorldMove);
+	
+	// Отрисовка текущего объекта
+//	Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
+	if (CurrentObject)
+		CurrentObject->Draw();
+	for (int i=0; i<MESSAGE::Count; i++)
+		Message[i]->Show(i, ScreenWidth, ScreenHeight);
+	// Вывод текста
+    DrawXText(STR_FPS, 20, 20, 200, 100, D3DCOLOR_ARGB(125, 250, 250, 50));
+	DrawXText(RENDER_TIME, 20, 50, 200, 150, D3DCOLOR_ARGB(125, 250, 250, 50));
+	DrawXText(STR_SPEED, 20, 80, 200, 200, D3DCOLOR_ARGB(125, 250, 250, 50));
+	if (DebMODE)
+		DrawXText(INFORMER, 20, 140, 800, 600, D3DCOLOR_ARGB(125, 250, 250, 250));
+	else
+		DrawXText(HELP, 20, 140, 300, 100, D3DCOLOR_ARGB(125, 250, 250, 250)); */
+
+	// end of scene
+	Device->EndScene();
+	Device->Present(NULL, NULL, NULL, NULL);
 }
 
 //== GAMEWINDOW ==================================================================================

@@ -14,7 +14,6 @@ int WINAPI WinMain(HINSTANCE	hinstance,
 	ngine->initInput();
 
 	//if (SUCCEEDED( InitDirect3D(window, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN) ) )) {
-	//	InitInput();
 	//	InitDrawText();
 	//	LoadArea();
 	ZeroMemory(&msg, sizeof(msg));
@@ -29,7 +28,7 @@ int WINAPI WinMain(HINSTANCE	hinstance,
 			DispatchMessage(&msg);
 		}
 		else {
-			//ngine->getInput();
+			ngine->engine();
 //			//if (GameMode) {
 //				if (timeGetTime() - startTime > 33 || limitFPS)	{
 //					startTime = timeGetTime();					

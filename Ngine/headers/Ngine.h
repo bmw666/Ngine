@@ -41,8 +41,9 @@ public:
 	VOID		destroyDirect3D();
 
 	HRESULT	initInput();
-	VOID		getInput();
 	VOID		destroyInput();
+
+	VOID		engine();
 
 private:
 	GAMEWINDOW						*window;
@@ -57,7 +58,12 @@ private:
 	BYTE									KeyboardKeys[256];
 	DIMOUSESTATE					MouseState;
 
-	FLOAT							Correlation;
+	FLOAT								Correlation;
+	BOOL								isDeviceLosted;
+	
+	VOID		getInput();
+	VOID		controlInput();
+	VOID    render();
 
 	static LRESULT CALLBACK mainWinProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 };
