@@ -248,11 +248,15 @@ HRESULT NGINE::initInput() {
 
 VOID NGINE::getInput() {
 	
-	static bool LostFocus=false;
+	static bool LostFocus = false;
 	
 	// if window not in focus, don't take input
-	if (window->hwnd != GetFocus()) {LostFocus=true; return;}
-	if (LostFocus) {destroyInput(); initInput(); LostFocus=false;}
+	if (window->hwnd != GetFocus()) { 
+		LostFocus = true; 
+		return;
+	}
+
+	//if (LostFocus) {destroyInput(); initInput(); LostFocus=false;}
 
 	if FAILED( Keyboard->GetDeviceState(256, (LPVOID)&KeyboardKeys) ) {
 		destroyInput();
@@ -265,6 +269,9 @@ VOID NGINE::getInput() {
 		MessageBox(window->hwnd, "Не удалось считать данные с мыши", "Мышь", MB_OK);
 		return;
 	}
+
+	if (KeyboardKeys[DIK_ESCAPE]) 
+		exit(0);
 }
 
 VOID NGINE::destroyInput() {
