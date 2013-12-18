@@ -29,7 +29,7 @@ int WINAPI WinMain(HINSTANCE	hinstance,
 			DispatchMessage(&msg);
 		}
 		else {
-			ngine->getInput();
+			//ngine->getInput();
 //			//if (GameMode) {
 //				if (timeGetTime() - startTime > 33 || limitFPS)	{
 //					startTime = timeGetTime();					
