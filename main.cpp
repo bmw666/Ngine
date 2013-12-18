@@ -13,6 +13,9 @@ int WINAPI WinMain(HINSTANCE	hinstance,
 	ngine->initDirect3D();
 	ngine->initInput();
 
+	OBJECT3D *cyl = ngine->createObject("objects/cylinder.x", true);
+	cyl->setPosition(-10, -10, -10);
+
 	//if (SUCCEEDED( InitDirect3D(window, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN) ) )) {
 	//	InitDrawText();
 	//	LoadArea();

@@ -1,4 +1,4 @@
-#ifndef _NGINE_H_
+﻿#ifndef _NGINE_H_
 #define _NGINE_H_
 
 #define DIRECTINPUT_VERSION  0x0800
@@ -8,9 +8,46 @@
 //#define MOUSE_RB 1
 //#define MOUSE_MB 2
 
+#define MAX_OBJECTS 1000
+
 #include <windows.h>
 #include <dinput.h>
 #include <d3dx9.h>
+
+class OBJECT3D {
+
+public:
+	BOOL						drawEnabled;
+	static int			count;
+	static OBJECT3D	**objects;
+	
+	OBJECT3D(LPDIRECT3DDEVICE9 dev, char* address, bool visible);
+	virtual ~OBJECT3D();
+	virtual void draw();
+	virtual void Physic() {};
+	virtual void Control() {};
+	void release();
+	void refresh();
+	void changeMesh(char* address);
+	void setPosition(float x, float y, float z);
+	D3DXVECTOR3 getPosition();
+	D3DXVECTOR3 getAngles();
+
+private:
+	LPDIRECT3DDEVICE9		device;			// pointer to device
+	D3DXVECTOR3					position;		// position
+	D3DXVECTOR3					angle;			// angles
+	LPD3DXBUFFER				meshBuffer;
+	LPDIRECT3DTEXTURE9	*meshTexture;
+	D3DMATERIAL9				*meshMaterials;
+	LPD3DXMESH					mesh;
+	DWORD								partCount;
+	char								path[256];
+	
+	void load(char* address);
+};
+
+
 
 class GAMEWINDOW : public WNDCLASSEX {
 
@@ -34,16 +71,17 @@ public:
 	NGINE(HINSTANCE hinst);
 	~NGINE();
 
-	HRESULT createWindow();
-	VOID		destroyWindow();
+	HRESULT		createWindow();
+	VOID			destroyWindow();
 
-	HRESULT	initDirect3D();
-	VOID		destroyDirect3D();
+	HRESULT		initDirect3D();
+	VOID			destroyDirect3D();
 
-	HRESULT	initInput();
-	VOID		destroyInput();
+	HRESULT		initInput();
+	VOID			destroyInput();
 
-	VOID		engine();
+	VOID			engine();
+	OBJECT3D*	createObject(char* pathToObject, bool visible);
 
 private:
 	GAMEWINDOW						*window;
@@ -53,13 +91,18 @@ private:
 	LPDIRECT3DDEVICE9			Device;
 
 	LPDIRECTINPUT8				Input;
-	LPDIRECTINPUTDEVICE8	Mouse;
-	LPDIRECTINPUTDEVICE8	Keyboard;
+	LPDIRECTINPUTDEVICE8	Mouse,
+												Keyboard;
+
 	BYTE									KeyboardKeys[256];
 	DIMOUSESTATE					MouseState;
 
-	FLOAT								Correlation;
-	BOOL								isDeviceLosted;
+	D3DXMATRIX						World, 
+												Camera, 
+												Projection;
+
+	FLOAT									Correlation;
+	BOOL									isDeviceLosted;
 	
 	VOID		getInput();
 	VOID		controlInput();

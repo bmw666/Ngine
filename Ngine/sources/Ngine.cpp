@@ -331,26 +331,31 @@ VOID NGINE::render() {
     Device->SetRenderTarget(0, RenderSurface);
     
 	
-	
+	*/
 	
 	
 	// Проекция
 	D3DXMatrixPerspectiveFovLH(&Projection, D3DX_PI/2, 
 		 Correlation, 0.1f, 3000.0f);
 	Device->SetTransform(D3DTS_PROJECTION, &Projection);
-	// end
-
-
+	
 	// Установка камеры
 	//D3DXMatrixLookAtLH(&Camera, &D3DXVECTOR3(0.0f, CamAngleX, CamAngleY),
+	
+	D3DXMatrixTranslation(&World, 0, 0, 0);
 	D3DXMatrixLookAtLH(&Camera, &D3DXVECTOR3(0.00001f, 0.0f, 0),
         &D3DXVECTOR3(0.0f, 1.0f, 0.0f),
         &D3DXVECTOR3(0.0f, 1.0f, 0.0f));
-	D3DXMatrixRotationY(&Wheel1, -CurrentObject->AngleY);
+	Device->SetTransform(D3DTS_VIEW, &Camera);
+
+	/*D3DXMatrixRotationY(&Wheel1, -CurrentObject->AngleY);
 	D3DXMatrixMultiply(&Camera, &Wheel1, &Camera);
 	D3DXMatrixReflect(&Wheel1, &D3DXPLANE(0,1,0,0.3));
-	D3DXMatrixMultiply(&Camera, &Camera, &Wheel1);
+	D3DXMatrixMultiply(&Camera, &Camera, &Wheel1);*/
 	
+
+
+	/*
 	//if (CurrentObject)
 	//	D3DXMatrixTranslation(&Wheel1, -CurrentObject->X, -CurrentObject->Y, -CurrentObject->Z);
 	//D3DXMatrixMultiply(&Camera, &Wheel1, &Camera); 
@@ -376,30 +381,32 @@ VOID NGINE::render() {
 //		CamAngleY+=0.01f;
 //	else CamAngleY-=0.01f;
 
-	/* comment
-	D3DXMatrixTranslation(&World, CurrentObject->X, 0, CurrentObject->Z);
+	
+	/*D3DXMatrixTranslation(&World, CurrentObject->X, 0, CurrentObject->Z);
 	Device->SetTransform(D3DTS_WORLD, &World);
 	Obj[0]->Draw();
-	Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
+	Device->SetRenderState(D3DRS_FOGENABLE, TRUE);*/
+	
 	D3DXMatrixTranslation(&World, 0, 0, 0);
 	Device->SetTransform(D3DTS_WORLD, &World);
 	// Отрисовка сцены
-	for (int i=1; i<OBJECT3D::Count; i++)
-		if (Obj[i]->DrawEnabled && Obj[i]!=CurrentObject)
-			Obj[i]->Draw();
-	// end
-	if (CurrentObject)
-		D3DXMatrixTranslation(&WorldMove, CurrentObject->X,  CurrentObject->Y,  CurrentObject->Z);
-	Device->SetTransform(D3DTS_WORLD, &WorldMove);
+	for (int i=0; i<OBJECT3D::count; i++)
+		if (OBJECT3D::objects[i] && OBJECT3D::objects[i]->drawEnabled)
+			OBJECT3D::objects[i]->draw();
+
+	//if (CurrentObject)
+	//	D3DXMatrixTranslation(&WorldMove, CurrentObject->X,  CurrentObject->Y,  CurrentObject->Z);
+	//Device->SetTransform(D3DTS_WORLD, &WorldMove);
 	
 	// Отрисовка текущего объекта
-//	Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
+	/*Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
 	if (CurrentObject)
 		CurrentObject->Draw();
 	for (int i=0; i<MESSAGE::Count; i++)
-		Message[i]->Show(i, ScreenWidth, ScreenHeight);
+		Message[i]->Show(i, ScreenWidth, ScreenHeight);*/
+	
 	// Вывод текста
-    DrawXText(STR_FPS, 20, 20, 200, 100, D3DCOLOR_ARGB(125, 250, 250, 50));
+	/*DrawXText(STR_FPS, 20, 20, 200, 100, D3DCOLOR_ARGB(125, 250, 250, 50));
 	DrawXText(RENDER_TIME, 20, 50, 200, 150, D3DCOLOR_ARGB(125, 250, 250, 50));
 	DrawXText(STR_SPEED, 20, 80, 200, 200, D3DCOLOR_ARGB(125, 250, 250, 50));
 	if (DebMODE)
@@ -410,6 +417,10 @@ VOID NGINE::render() {
 	// end of scene
 	Device->EndScene();
 	Device->Present(NULL, NULL, NULL, NULL);
+}
+
+OBJECT3D* NGINE::createObject(char* pathToObject, bool visible) {
+	return new OBJECT3D(Device, pathToObject, visible);
 }
 
 //== GAMEWINDOW ==================================================================================
@@ -428,4 +439,107 @@ GAMEWINDOW::GAMEWINDOW(bool fullScreen, int screenWidth=0, int screenHeight=0) {
 		left    = (GetSystemMetrics(SM_CXSCREEN) - width)/2;
 		top     = (GetSystemMetrics(SM_CYSCREEN) - height)/2;
 	}
+}
+
+//== OBJECT3D ==================================================================================
+
+int OBJECT3D::count = 0;
+OBJECT3D** OBJECT3D::objects = new OBJECT3D*[MAX_OBJECTS];
+
+OBJECT3D::OBJECT3D(LPDIRECT3DDEVICE9 dev, char* address, bool visible = true) {
+	device = dev;
+	position.x = position.y = position.z = 0;
+	objects[count] = this;
+	if (visible) 
+		drawEnabled = true;
+	else 
+		drawEnabled = false;
+		
+	load(address);
+	count++;
+}
+
+OBJECT3D::~OBJECT3D() {
+	release();
+	device = NULL;
+		
+	// удаляем из списка всех объектов 3D
+	bool flag = false;
+
+	for (int i=0; i<count; i++) {
+		if (this == objects[i])
+			flag = true;
+		if (flag)
+			objects[i] = objects[i+1];
+	}
+	count--;
+}
+	
+void OBJECT3D::draw() {
+	for (DWORD i=0; i<partCount; i++) {
+		//if (!NoMatMODE)
+			device->SetMaterial(&meshMaterials[i]);
+		//if (!NoTexMODE)
+			device->SetTexture(0, meshTexture[i]);
+		mesh->DrawSubset(i);
+	}
+}
+	
+void OBJECT3D::release() {
+	for (DWORD i=0; i<partCount; i++)
+		if (meshTexture[i])
+			meshTexture[i]->Release();
+	delete[] meshTexture;
+	delete[] meshMaterials;
+	mesh->Release();
+}
+
+void OBJECT3D::refresh() {
+	changeMesh(path);
+}
+
+void OBJECT3D::changeMesh(char* address) {
+	load(address);
+}
+	
+void OBJECT3D::setPosition(float x, float y, float z) { 
+	position.x = x;
+	position.y = y;
+	position.z = z;
+}
+
+D3DXVECTOR3 OBJECT3D::getPosition() {
+	return position;
+}
+
+D3DXVECTOR3 OBJECT3D::getAngles() {
+	return position;
+}
+
+void OBJECT3D::load(char* address) {
+	mesh = 0;
+	meshBuffer = 0;
+	meshMaterials = 0;
+
+	D3DXLoadMeshFromX(address, D3DXMESH_SYSTEMMEM, device,
+		NULL, &meshBuffer, NULL, &partCount, &mesh);
+	D3DXMATERIAL* D3DXMeshMaterials;
+
+	D3DXMeshMaterials = (D3DXMATERIAL *)meshBuffer->GetBufferPointer();
+	meshMaterials	= new D3DMATERIAL9[partCount];
+	meshTexture		= new LPDIRECT3DTEXTURE9[partCount];
+
+	for (DWORD i=0; i<partCount; i++) {
+		// копируем материал
+		meshMaterials[i] = D3DXMeshMaterials[i].MatD3D;
+		// устанавиваем окружающий свет
+		meshMaterials[i].Ambient = meshMaterials[i].Diffuse;
+		// загружаем текстуру
+		if FAILED(D3DXCreateTextureFromFile(device, D3DXMeshMaterials[i].pTextureFilename, &meshTexture[i]))
+			meshTexture[i] = NULL;
+	}
+
+	// уничтожаем материальный буфер
+	meshBuffer->Release();
+	strcpy_s(path, address);
 }
